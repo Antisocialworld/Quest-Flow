@@ -344,7 +344,7 @@
     }
     .history-list li:last-child { border-bottom: none; }
     .history-list .h-action { color: var(--text-primary); flex: 1; }
-    .history-list .h-time { color: var(--text-muted); font-size: 11px; white-space: nowrap; }
+    .history-list .h-time { color: var(--text-muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
 
     /* ============= EMPTY STATE ============= */
     .empty-state {
@@ -414,7 +414,7 @@
     }
 
     /* ============= MOBILE LIST SELECT ============= */
-    .list-select { display: flex; flex-direction: column; gap: 10px; padding-top: 20px; }
+    .list-select { display: flex; flex-direction: column; gap: 10px; padding-top: 20px; flex: 1; overflow-y: auto; min-height: 0; }
     .list-card {
       padding: 18px 20px; border-radius: var(--radius-sm);
       background: var(--bg-card); border: 1.5px solid var(--border);
@@ -458,9 +458,6 @@
         min-width: 0 !important;
         border-right: none !important;
         min-height: 100dvh;
-        overflow-y: auto;
-        overflow-x: clip;
-        touch-action: pan-y;
       }
       .panel-right { display: none !important; }
 
