@@ -80,6 +80,7 @@
       display: flex;
       min-height: 100vh;
       min-height: -webkit-fill-available;
+      overflow-x: hidden;
     }
 
     /* Left panel */
@@ -457,10 +458,17 @@
         max-width: none !important;
         min-width: 0 !important;
         border-right: none !important;
+        min-height: 100vh;
+        min-height: -webkit-fill-available;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
       }
       .panel-right { display: none !important; }
 
       body { overscroll-behavior: none; }
+
+      .add-form .row { flex-wrap: wrap; }
+      .add-form .row button { flex-shrink: 0; }
 
       @keyframes slideIn {
         from { opacity: 0; transform: translateY(4px); }
@@ -755,7 +763,7 @@
         }, '\u23F0') : null,
         React.createElement('button', {
           className: 't-dots',
-          onClick: function (e) { e.stopPropagation(); dotsOpen === task.id ? onDotsClose() : onDotsOpen(task.id); }
+          onClick: function (e) { e.preventDefault(); e.stopPropagation(); dotsOpen === task.id ? onDotsClose() : onDotsOpen(task.id); }
         }, '\u22EE'),
         dotsOpen === task.id ? React.createElement('div', { className: 'dropdown' },
           React.createElement('button', { onClick: function (e) { e.stopPropagation(); onDotsClose(); onSelect(task); } }, 'View Details'),
@@ -1139,11 +1147,11 @@
         ),
 
         // ===== MOBILE =====
-        React.createElement('div', { className: 'mobile-only', style: { width: '100%', flexDirection: 'column' } },
+        React.createElement('div', { className: 'mobile-only', style: { width: '100%', flexDirection: 'column', minHeight: '100vh', minHeight: '-webkit-fill-available' } },
 
           // Screen: lists
           mobileScreen === 'lists'
-            ? React.createElement('div', { className: 'panel-left', style: { width: '100%', height: '100vh', borderRight: 'none' } },
+            ? React.createElement('div', { className: 'panel-left', style: { width: '100%', borderRight: 'none' } },
                 React.createElement('div', { className: 'header' },
                   React.createElement('h1', null, 'Quest Flow'),
                   React.createElement('div', { className: 'header-actions' },
@@ -1171,7 +1179,7 @@
 
           // Screen: tasks
           mobileScreen === 'tasks'
-            ? React.createElement('div', { className: 'panel-left', style: { width: '100%', height: '100vh', borderRight: 'none' } },
+            ? React.createElement('div', { className: 'panel-left', style: { width: '100%', borderRight: 'none' } },
                 React.createElement('div', { className: 'header' },
                   React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8 } },
                     React.createElement('button', { className: 'theme-btn', onClick: function () { setDotsOpen(null); setMobileScreen('lists'); } }, '\u2190 Lists'),
@@ -1193,7 +1201,7 @@
                           return React.createElement(TaskItem, {
                             key: task.id, task: task,
                             selected: false,
-                            onSelect: function (t) { setMobileTaskId(t.id); setMobileScreen('detail'); },
+                            onSelect: function (t) { setDotsOpen(null); setMobileTaskId(t.id); setMobileScreen('detail'); },
                             onToggle: handleToggle, dotsOpen: dotsOpen, onDotsOpen: setDotsOpen,
                             onDotsClose: function () { return setDotsOpen(null); },
                             reminders: reminders, onOpenReminder: setReminderModalTask,
