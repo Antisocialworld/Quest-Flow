@@ -216,7 +216,7 @@
       border-radius: var(--radius-sm); background: var(--bg-card);
       border: 1.5px solid var(--accent); cursor: pointer;
       transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
-      animation: slideIn 0.2s ease; position: relative;
+      animation: slideIn 0.2s ease; position: relative; overflow: clip;
     }
     .task-item:hover { border-color: var(--accent); }
     .task-item.selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
@@ -231,21 +231,20 @@
       width: 16px; height: 16px; accent-color: var(--green);
       cursor: pointer; flex-shrink: 0;
     }
-    .task-item .t-body { flex: 1; min-width: 0; }
+    .task-item .t-body { flex: 1; min-width: 0; overflow: hidden; }
     .task-item .t-title {
       font-size: 13px; font-weight: 600; color: var(--text-primary);
-      word-break: break-word; display: -webkit-box; -webkit-line-clamp: 1; line-clamp: 1;
-      -webkit-box-orient: vertical; overflow: hidden;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .task-item.status-completed .t-title { text-decoration: line-through; opacity: 0.55; }
     .task-item .t-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
     .task-item .t-meta .overdue-tag { color: var(--red); font-weight: 600; }
 
     .task-item .t-dots {
-      padding: 4px 6px; border: none; border-radius: 4px;
+      width: 44px; height: 44px; border: none; border-radius: 4px;
       background: transparent; color: var(--text-muted); cursor: pointer;
       font-size: 18px; line-height: 1; transition: background 0.15s;
-      flex-shrink: 0; position: relative; min-height: 44px; min-width: 44px;
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center;
     }
     .task-item .t-dots:hover { background: var(--border); }
 
@@ -758,7 +757,7 @@
         ),
         taskReminders.length > 0 ? React.createElement('button', {
           onClick: function (e) { e.stopPropagation(); onOpenReminder(task); },
-          style: { fontSize: 18, flexShrink: 0, alignSelf: 'center', marginRight: 4, lineHeight: 1, padding: 0, border: 'none', background: 'none', cursor: 'pointer', minHeight: 44, minWidth: 44 },
+          style: { fontSize: 18, flexShrink: 0, alignSelf: 'center', marginRight: 4, lineHeight: 1, padding: 0, border: 'none', background: 'none', cursor: 'pointer', width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' },
           title: taskReminders.length + ' reminder(s) set'
         }, '\u23F0') : null,
         React.createElement('button', {
