@@ -449,6 +449,10 @@
     .desktop-only { display: flex; }
 
     @media (max-width: 767px) {
+      html { height: 100%; overflow: hidden; }
+      body { height: 100%; overflow: hidden; position: fixed; top: 0; left: 0; width: 100%; overscroll-behavior: none; touch-action: pan-y; }
+      .app-container { height: 100%; min-height: 0; overflow: clip; }
+
       .desktop-only { display: none !important; }
       .mobile-only { display: flex; }
 
@@ -457,11 +461,8 @@
         max-width: none !important;
         min-width: 0 !important;
         border-right: none !important;
-        min-height: 100dvh;
       }
       .panel-right { display: none !important; }
-
-      body { overscroll-behavior: none; touch-action: pan-y; }
 
       .add-form .row { flex-wrap: wrap; }
       .add-form .row button { flex-shrink: 0; }
@@ -1143,7 +1144,7 @@
         ),
 
         // ===== MOBILE =====
-        React.createElement('div', { className: 'mobile-only', style: { width: '100%', flexDirection: 'column', minHeight: '100dvh' } },
+        React.createElement('div', { className: 'mobile-only', style: { width: '100%', flexDirection: 'column' } },
 
           // Screen: lists
           mobileScreen === 'lists'
