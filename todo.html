@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Quest Flow</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg-page: #f0f2f5;
+      --bg-card: #ffffff;
+      --bg-sidebar: #fafbfc;
+      --bg-hover: #f1f5f9;
+      --text-primary: #1a1a2e;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      --border: #e2e8f0;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --green: #22c55e;
+      --green-bg: #f0fdf4;
+      --red: #ef4444;
+      --red-bg: #fef2f2;
+      --amber: #f59e0b;
+      --amber-bg: #fffbeb;
+      --purple: #8b5cf6;
+      --shadow: 0 4px 24px rgba(0,0,0,0.08);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --safe-t: env(safe-area-inset-top, 0px);
+      --safe-r: env(safe-area-inset-right, 0px);
+      --safe-b: env(safe-area-inset-bottom, 0px);
+      --safe-l: env(safe-area-inset-left, 0px);
+    }
+
+    [data-theme="dark"] {
+      --bg-page: #000000;
+      --bg-card: #111111;
+      --bg-sidebar: #0a0a0a;
+      --bg-hover: #1a1a1a;
+      --text-primary: #f0f0f0;
+      --text-secondary: #a0a0a0;
+      --text-muted: #555555;
+      --border: #222222;
+      --accent: #3b82f6;
+      --accent-hover: #60a5fa;
+      --green: #22c55e;
+      --green-bg: #0a2a10;
+      --red: #ef4444;
+      --red-bg: #2a0a0a;
+      --amber: #f59e0b;
+      --amber-bg: #2a1a00;
+      --purple: #8b5cf6;
+      --shadow: 0 4px 24px rgba(0,0,0,0.6);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg-page);
+      color: var(--text-primary);
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
+      transition: background 0.3s, color 0.3s;
+      -webkit-font-smoothing: antialiased;
+    }
+    html { height: -webkit-fill-available; }
+
+    /* ============= LAYOUT ============= */
+    .app-container {
+      display: flex;
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
+    }
+
+    /* Left panel */
+    .panel-left {
+      width: 40%;
+      max-width: 480px;
+      min-width: 320px;
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 24px 20px;
+      padding-top: calc(24px + var(--safe-t));
+      padding-bottom: calc(24px + var(--safe-b));
+      padding-left: calc(20px + var(--safe-l));
+      padding-right: calc(20px + var(--safe-r));
+      overflow: hidden;
+      transition: background 0.3s, border-color 0.3s;
+    }
+
+    /* Right panel */
+    .panel-right {
+      flex: 1;
+      background: var(--bg-card);
+      padding: 24px 28px;
+      padding-top: calc(24px + var(--safe-t));
+      padding-bottom: calc(24px + var(--safe-b));
+      padding-left: calc(28px + var(--safe-l));
+      padding-right: calc(28px + var(--safe-r));
+      overflow-y: auto;
+      transition: background 0.3s;
+      min-width: 0;
+    }
+
+    /* ============= HEADER ============= */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      flex-shrink: 0;
+    }
+    .header h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+    .header-actions { display: flex; gap: 8px; align-items: center; }
+
+    .theme-btn {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 13px;
+      transition: background 0.2s;
+      min-height: 44px;
+    }
+    .theme-btn:hover { background: var(--border); }
+
+    /* ============= ADD FORM ============= */
+    .add-form { margin-bottom: 18px; flex-shrink: 0; }
+    .add-form .row { display: flex; gap: 8px; margin-bottom: 8px; }
+    .add-form input[type="text"] {
+      flex: 1; padding: 10px 14px; border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm); font-size: 14px; outline: none;
+      background: var(--bg-card); color: var(--text-primary);
+      transition: border-color 0.2s; min-height: 44px;
+    }
+    .add-form input[type="text"]:focus { border-color: var(--accent); }
+    .add-form .meta-row { display: flex; flex-wrap: wrap; gap: 6px; }
+    .add-form .meta-row label {
+      display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-secondary);
+    }
+    .add-form .meta-row input[type="date"],
+    .add-form .meta-row input[type="time"] {
+      padding: 6px 8px; border: 1.5px solid var(--border); border-radius: 5px;
+      font-size: 12px; outline: none; background: var(--bg-card); color: var(--text-primary);
+      min-height: 36px;
+    }
+    .add-form .meta-row input:focus { border-color: var(--accent); }
+
+    /* ============= STATS ============= */
+    .stats {
+      display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px;
+      padding: 10px 14px; background: var(--bg-card);
+      border-radius: var(--radius-sm); border: 1px solid var(--border);
+      font-size: 12px; transition: background 0.3s, border-color 0.3s; flex-shrink: 0;
+    }
+    .stats span { color: var(--text-secondary); }
+    .stats strong { color: var(--text-primary); }
+    .stats .overdue-count strong { color: var(--red); }
+
+    /* ============= SEARCH ============= */
+    .search-wrap {
+      display: flex; gap: 6px; margin-bottom: 12px; flex-shrink: 0;
+    }
+    .search-wrap input {
+      flex: 1; padding: 9px 14px; border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm); font-size: 13px; outline: none;
+      background: var(--bg-card); color: var(--text-primary);
+      transition: border-color 0.2s; min-height: 44px;
+    }
+    .search-wrap input:focus { border-color: var(--accent); }
+    .search-btn {
+      padding: 9px 14px; border: none; border-radius: var(--radius-sm);
+      font-size: 16px; line-height: 1; cursor: pointer; background: var(--accent);
+      color: #fff; transition: opacity 0.15s; flex-shrink: 0; min-height: 44px;
+    }
+    .search-btn:hover { opacity: 0.85; }
+
+    /* ============= TABS ============= */
+    .tabs {
+      display: flex; gap: 3px; margin-bottom: 14px; background: var(--bg-card);
+      border-radius: var(--radius-sm); padding: 3px; border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .tab {
+      flex: 1; padding: 7px 0; border: none; border-radius: 6px;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      background: transparent; color: var(--text-muted);
+      transition: background 0.2s, color 0.2s; min-height: 36px;
+    }
+    .tab.active { background: var(--accent); color: #fff; }
+    .tab:hover:not(.active) { color: var(--text-primary); }
+
+    /* ============= TASK LIST ============= */
+    .task-list-wrap {
+      flex: 1; overflow-y: auto; min-height: 0;
+      margin: 0 -4px 0 0; padding-right: 4px;
+    }
+    .task-list-wrap::-webkit-scrollbar { width: 5px; }
+    .task-list-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    .task-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+
+    .task-item {
+      display: flex; align-items: center; gap: 8px; padding: 6px 10px;
+      border-radius: var(--radius-sm); background: var(--bg-card);
+      border: 1.5px solid var(--accent); cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+      animation: slideIn 0.2s ease; position: relative;
+    }
+    .task-item:hover { border-color: var(--accent); }
+    .task-item.selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+
+    .task-item.status-pending { border-left: 4px solid var(--amber); }
+    .task-item.status-completed { border-left: 4px solid var(--accent); }
+    .task-item.status-in-progress { border-left: 4px solid var(--accent); }
+
+    .task-item.overdue { border-left: 4px solid var(--red); background: var(--red-bg); }
+
+    .task-item .t-check {
+      width: 16px; height: 16px; accent-color: var(--green);
+      cursor: pointer; flex-shrink: 0;
+    }
+    .task-item .t-body { flex: 1; min-width: 0; }
+    .task-item .t-title {
+      font-size: 13px; font-weight: 600; color: var(--text-primary);
+      word-break: break-word; display: -webkit-box; -webkit-line-clamp: 1; line-clamp: 1;
+      -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .task-item.status-completed .t-title { text-decoration: line-through; opacity: 0.55; }
+    .task-item .t-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .task-item .t-meta .overdue-tag { color: var(--red); font-weight: 600; }
+
+    .task-item .t-dots {
+      padding: 4px 6px; border: none; border-radius: 4px;
+      background: transparent; color: var(--text-muted); cursor: pointer;
+      font-size: 18px; line-height: 1; transition: background 0.15s;
+      flex-shrink: 0; position: relative; min-height: 44px; min-width: 44px;
+    }
+    .task-item .t-dots:hover { background: var(--border); }
+
+    .dropdown {
+      position: absolute; right: 0; top: 100%; background: var(--bg-card);
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 50;
+      min-width: 170px; padding: 4px; animation: fadeIn 0.15s ease;
+    }
+    .dropdown button {
+      display: block; width: 100%; text-align: left; padding: 10px 12px;
+      border: none; background: transparent; color: var(--text-secondary);
+      font-size: 13px; cursor: pointer; border-radius: 5px;
+      transition: background 0.1s; min-height: 44px;
+    }
+    .dropdown button:hover { background: var(--border); color: var(--text-primary); }
+    .dropdown button.danger { color: var(--red); }
+    .dropdown button.danger:hover { background: var(--red-bg); }
+
+    /* ============= RIGHT PANEL — DETAIL ============= */
+    .detail-placeholder {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; height: 100%; text-align: center;
+      animation: fadeIn 0.3s ease; color: var(--text-muted);
+    }
+    .detail-placeholder .icon { font-size: 56px; margin-bottom: 16px; }
+    .detail-placeholder h3 { font-size: 20px; color: var(--text-secondary); margin-bottom: 6px; }
+
+    .detail-view { animation: fadeIn 0.25s ease; }
+
+    .detail-view .detail-header {
+      display: flex; align-items: flex-start; gap: 12px; margin-bottom: 24px;
+    }
+    .detail-header-left { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+    .detail-view .detail-title {
+      font-size: 22px; font-weight: 700; color: var(--text-primary);
+      word-break: break-word; flex: 1;
+    }
+
+    .detail-section { margin-bottom: 22px; }
+    .detail-section label {
+      display: block; font-size: 12px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px;
+    }
+
+    .detail-section .status-toggle-group { display: flex; gap: 6px; flex-wrap: wrap; }
+    .detail-section .status-toggle-group button {
+      padding: 8px 16px; border: 1px solid var(--border); border-radius: 20px;
+      font-size: 12px; font-weight: 600; cursor: pointer; background: transparent;
+      color: var(--text-secondary); transition: background 0.15s, color 0.15s;
+      min-height: 44px;
+    }
+
+    .detail-section .date-inputs { display: flex; gap: 12px; flex-wrap: wrap; }
+    .detail-section .date-inputs label {
+      display: flex; align-items: center; gap: 6px; font-size: 13px;
+      font-weight: 400; text-transform: none; letter-spacing: normal;
+      color: var(--text-secondary);
+    }
+    .detail-section .date-inputs input[type="date"],
+    .detail-section .date-inputs input[type="time"] {
+      padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 5px;
+      font-size: 13px; outline: none; background: var(--bg-card);
+      color: var(--text-primary); min-height: 44px;
+    }
+    .detail-section .date-inputs input:focus { border-color: var(--accent); }
+
+    .feedback-on-time {
+      display: inline-block; margin-top: 6px; padding: 4px 12px; border-radius: 6px;
+      font-size: 12px; font-weight: 600; background: var(--green-bg);
+      color: var(--green); animation: popIn 0.3s ease;
+    }
+
+    .detail-section .btn-action {
+      padding: 10px 18px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 600; cursor: pointer; background: transparent;
+      color: var(--text-secondary); transition: background 0.15s; min-height: 44px;
+    }
+    .detail-section .btn-action:hover { background: var(--border); }
+    .detail-section .btn-action.primary { color: var(--purple); border-color: var(--purple); }
+    .detail-section .btn-action.primary:hover { background: color-mix(in srgb, var(--purple) 10%, transparent); }
+    .detail-section .btn-action.danger { color: var(--red); border-color: var(--red); }
+    .detail-section .btn-action.danger:hover { background: var(--red-bg); }
+
+    .reminder-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+    .reminder-list li {
+      display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+      background: var(--bg-sidebar); border-radius: var(--radius-sm); font-size: 13px;
+    }
+    .reminder-list li .r-info { flex: 1; color: var(--text-primary); }
+    .reminder-list li .r-actions { display: flex; gap: 4px; }
+
+    .history-list { list-style: none; }
+    .history-list li {
+      display: flex; align-items: flex-start; gap: 8px; padding: 8px 0;
+      border-bottom: 1px solid var(--border); font-size: 13px;
+    }
+    .history-list li:last-child { border-bottom: none; }
+    .history-list .h-action { color: var(--text-primary); flex: 1; }
+    .history-list .h-time { color: var(--text-muted); font-size: 11px; white-space: nowrap; }
+
+    /* ============= EMPTY STATE ============= */
+    .empty-state {
+      text-align: center; padding: 40px 16px; color: var(--text-muted);
+      font-size: 13px; animation: fadeIn 0.3s ease;
+    }
+    .empty-state .icon { font-size: 40px; margin-bottom: 8px; display: block; }
+
+    /* ============= MODAL ============= */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000; animation: fadeIn 0.2s ease;
+      padding: 16px;
+      padding-top: calc(16px + var(--safe-t));
+      padding-bottom: calc(16px + var(--safe-b));
+    }
+    .modal {
+      background: var(--bg-card); border-radius: 14px; padding: 24px;
+      width: 100%; max-width: 400px; max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15); animation: popIn 0.25s ease;
+    }
+    .modal h3 { font-size: 16px; margin-bottom: 16px; color: var(--text-primary); }
+    .modal label {
+      display: block; font-size: 13px; font-weight: 400; text-transform: none;
+      letter-spacing: normal; color: var(--text-secondary); margin-bottom: 4px;
+    }
+    .modal input[type="date"], .modal input[type="time"] {
+      width: 100%; padding: 10px; border: 1.5px solid var(--border);
+      border-radius: 6px; font-size: 13px; outline: none; margin-bottom: 12px;
+      background: var(--bg-card); color: var(--text-primary); min-height: 44px;
+    }
+    .modal input:focus { border-color: var(--purple); }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+    .modal-actions button {
+      padding: 10px 18px; border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 600; cursor: pointer; min-height: 44px;
+    }
+
+    /* ============= MOBILE FULL-SCREEN MODAL ============= */
+    .mobile-modal {
+      position: fixed; inset: 0; z-index: 1000;
+      background: var(--bg-page); overflow-y: auto;
+      animation: slideUp 0.3s ease;
+      padding: 20px;
+      padding-top: calc(20px + var(--safe-t));
+      padding-bottom: calc(20px + var(--safe-b));
+      padding-left: calc(20px + var(--safe-l));
+      padding-right: calc(20px + var(--safe-r));
+    }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+    .mobile-modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .mobile-modal-header h2 {
+      font-size: 18px; font-weight: 700; color: var(--text-primary);
+    }
+    .mobile-modal-close {
+      padding: 8px; border: none; background: none; cursor: pointer;
+      font-size: 24px; color: var(--text-muted); min-height: 44px; min-width: 44px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ============= MOBILE LIST SELECT ============= */
+    .list-select { display: flex; flex-direction: column; gap: 10px; padding-top: 20px; }
+    .list-card {
+      padding: 18px 20px; border-radius: var(--radius-sm);
+      background: var(--bg-card); border: 1.5px solid var(--border);
+      cursor: pointer; transition: border-color 0.15s;
+      display: flex; align-items: center; justify-content: space-between;
+      min-height: 60px;
+    }
+    .list-card:hover { border-color: var(--accent); }
+    .list-card .lc-title { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+    .list-card .lc-count { font-size: 13px; color: var(--text-muted); }
+    .list-card .lc-arrow { font-size: 18px; color: var(--text-muted); }
+
+    /* ============= TOAST ============= */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      padding: 12px 24px; border-radius: var(--radius-sm);
+      font-size: 14px; font-weight: 600; z-index: 2000;
+      animation: popIn 0.3s ease; box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    }
+    .toast.success { background: var(--green); color: #fff; }
+    .toast.info { background: var(--accent); color: #fff; }
+
+    /* ============= ANIMATIONS ============= */
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    /* ============= RESPONSIVE ============= */
+    .mobile-only { display: none; }
+    .desktop-only { display: flex; }
+
+    @media (max-width: 767px) {
+      .desktop-only { display: none !important; }
+      .mobile-only { display: flex; }
+
+      .panel-left {
+        width: 100% !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        border-right: none !important;
+      }
+      .panel-right { display: none !important; }
+    }
+
+    @media (min-width: 768px) {
+      .mobile-only { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    /*
+     * ============================================
+     *  QUEST FLOW — Responsive Two-Panel App
+     * ============================================
+     *  Desktop ≥768px : two-panel split (40/60)
+     *  Mobile <768px   : single column + slide modal
+     * ============================================
+     */
+
+    const { useState, useEffect, useCallback, useRef, useMemo } = React;
+
+    // =============================================================
+    //  HELPERS
+    // =============================================================
+
+    const LS_KEYS = { tasks: 'qf_tasks', theme: 'qf_theme', reminders: 'qf_reminders' };
+
+    function loadJSON(key, fallback) {
+      try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : fallback; }
+      catch { return fallback; }
+    }
+    function saveJSON(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+    function todayStr() { return new Date().toISOString().slice(0, 10); }
+    function nowTimeStr() {
+      var d = new Date(), pad = function (n) { return String(n).padStart(2, '0'); };
+      return pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+    function nowISO() {
+      var d = new Date(), pad = function (n) { return String(n).padStart(2, '0'); };
+      return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+    function formatTime12h(timeStr) {
+      if (!timeStr) return '';
+      var parts = timeStr.split(':');
+      var h = parseInt(parts[0], 10), m = parts[1];
+      var ampm = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      return h + ':' + m + ' ' + ampm;
+    }
+    function formatDate(dateStr, timeStr) {
+      if (!dateStr) return '';
+      var d = new Date(dateStr + 'T' + (timeStr || '00:00'));
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + (timeStr ? ' ' + formatTime12h(timeStr) : '');
+    }
+    function parseDue(dateStr, timeStr) {
+      if (!dateStr) return null;
+      return new Date(dateStr + 'T' + (timeStr || '23:59'));
+    }
+    function isTaskOverdue(task) {
+      if (task.status === 'completed') return false;
+      var due = parseDue(task.dueDate, task.dueTime);
+      return due ? due < new Date() : false;
+    }
+    function isTaskOnTime(task) {
+      if (task.status !== 'completed' || !task.completedAt) return false;
+      var due = parseDue(task.dueDate, task.dueTime);
+      if (!due) return true;
+      return new Date(task.completedAt) <= due;
+    }
+    function makeHistoryEntry(action) { return { action: action, timestamp: nowISO() }; }
+    async function requestNotif() {
+      if (!('Notification' in window)) return false;
+      if (Notification.permission === 'granted') return true;
+      if (Notification.permission === 'denied') return false;
+      var r = await Notification.requestPermission();
+      return r === 'granted';
+    }
+    function sendNotification(title, body) {
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+      new Notification(title, { body });
+    }
+
+    // =============================================================
+    //  CUSTOM HOOKS
+    // =============================================================
+
+    function usePersistedState(key, fallback) {
+      var arr = useState(function () { return loadJSON(key, fallback); });
+      var val = arr[0], setVal = arr[1];
+      useEffect(function () { saveJSON(key, val); }, [key, val]);
+      return [val, setVal];
+    }
+
+    function useTasks() {
+      var _usePersistedState = usePersistedState(LS_KEYS.tasks, []),
+          tasks = _usePersistedState[0], setTasks = _usePersistedState[1];
+
+      var addTask = useCallback(function (text, dueDate, dueTime) {
+        var task = {
+          id: Date.now(), text: text, status: 'pending',
+          dueDate: dueDate || null, dueTime: dueTime || null,
+          completedAt: null, createdAt: nowISO(),
+          history: [makeHistoryEntry('Task created')],
+        };
+        setTasks(function (prev) { return prev.concat([task]); });
+        return task;
+      }, [setTasks]);
+
+      var updateTask = useCallback(function (id, updates) {
+        setTasks(function (prev) {
+          return prev.map(function (t) {
+            if (t.id !== id) return t;
+            var merged = Object.assign({}, t, updates);
+            if (updates.status === 'completed' && t.status !== 'completed') merged.completedAt = nowISO();
+            if (updates.status && updates.status !== 'completed' && t.status === 'completed') merged.completedAt = null;
+            return merged;
+          });
+        });
+      }, [setTasks]);
+
+      var deleteTask = useCallback(function (id) {
+        setTasks(function (prev) { return prev.filter(function (t) { return t.id !== id; }); });
+      }, [setTasks]);
+
+      var duplicateTask = useCallback(function (task) {
+        var dup = Object.assign({}, task, {
+          id: Date.now(), text: task.text + ' (copy)', status: 'pending',
+          completedAt: null, createdAt: nowISO(),
+          history: [makeHistoryEntry('Duplicated from task #' + task.id)],
+        });
+        setTasks(function (prev) { return prev.concat([dup]); });
+        return dup;
+      }, [setTasks]);
+
+      var addHistory = useCallback(function (id, action) {
+        setTasks(function (prev) {
+          return prev.map(function (t) {
+            if (t.id !== id) return t;
+            return Object.assign({}, t, { history: t.history.concat([makeHistoryEntry(action)]) });
+          });
+        });
+      }, [setTasks]);
+
+      return { tasks: tasks, addTask: addTask, updateTask: updateTask, deleteTask: deleteTask, duplicateTask: duplicateTask, addHistory: addHistory };
+    }
+
+    function useRemindersStore() {
+      var _usePersistedState2 = usePersistedState(LS_KEYS.reminders, []),
+          reminders = _usePersistedState2[0], setReminders = _usePersistedState2[1];
+      var addReminder = useCallback(function (taskId, date, time) {
+        var r = { id: Date.now(), taskId: taskId, date: date, time: time, createdAt: nowISO() };
+        setReminders(function (prev) { return prev.concat([r]); });
+        return r;
+      }, [setReminders]);
+      var updateReminder = useCallback(function (id, updates) {
+        setReminders(function (prev) { return prev.map(function (r) { return r.id === id ? Object.assign({}, r, updates) : r; }); });
+      }, [setReminders]);
+      var deleteReminder = useCallback(function (id) {
+        setReminders(function (prev) { return prev.filter(function (r) { return r.id !== id; }); });
+      }, [setReminders]);
+      return { reminders: reminders, addReminder: addReminder, updateReminder: updateReminder, deleteReminder: deleteReminder };
+    }
+
+    function useReminderTimers(reminders, tasks, addHistory) {
+      var timersRef = useRef({});
+      useEffect(function () {
+        Object.values(timersRef.current).forEach(clearTimeout);
+        timersRef.current = {};
+        var now = Date.now();
+        reminders.forEach(function (r) {
+          var task = tasks.find(function (t) { return t.id === r.taskId; });
+          if (!task || task.status === 'completed') return;
+          var at = new Date(r.date + 'T' + r.time).getTime();
+          var diff = at - now;
+          if (diff <= 0) return;
+          timersRef.current[r.id] = setTimeout(function () {
+            sendNotification('Quest Flow Reminder', '"' + task.text + '" is due!');
+            addHistory(task.id, 'Reminder triggered');
+          }, diff);
+        });
+        return function () { Object.values(timersRef.current).forEach(clearTimeout); };
+      }, [reminders, tasks, addHistory]);
+    }
+
+    function useTheme() {
+      var _usePersistedState3 = usePersistedState(LS_KEYS.theme, 'dark'), theme = _usePersistedState3[0], setTheme = _usePersistedState3[1];
+      useEffect(function () { document.documentElement.setAttribute('data-theme', theme); }, [theme]);
+      var toggle = useCallback(function () { setTheme(function (t) { return t === 'light' ? 'dark' : 'light'; }); }, [setTheme]);
+      return [theme, toggle];
+    }
+
+    function useToast() {
+      var _useState = useState(null), toast = _useState[0], setToast = _useState[1];
+      var show = useCallback(function (msg, type) {
+        if (type === undefined) type = 'success';
+        setToast({ msg: msg, type: type });
+        setTimeout(function () { return setToast(null); }, 2500);
+      }, []);
+      return [toast, show];
+    }
+
+    // =============================================================
+    //  COMPONENTS
+    // =============================================================
+
+    function AddForm({ onAdd }) {
+      var _useState2 = useState(''), text = _useState2[0], setText = _useState2[1];
+      var _useState3 = useState(todayStr), dueDate = _useState3[0], setDueDate = _useState3[1];
+      var _useState4 = useState(nowTimeStr), dueTime = _useState4[0], setDueTime = _useState4[1];
+      var submit = function () {
+        var t = text.trim(); if (!t) return;
+        onAdd(t, dueDate, dueTime);
+        setText(''); setDueDate(todayStr()); setDueTime(nowTimeStr());
+      };
+      var handleKey = function (e) { if (e.key === 'Enter') submit(); };
+      return React.createElement('div', { className: 'add-form' },
+        React.createElement('div', { className: 'row' },
+          React.createElement('input', { type: 'text', placeholder: 'What are you doing today?', value: text, onChange: function (e) { return setText(e.target.value); }, onKeyDown: handleKey }),
+          React.createElement('button', { className: 'theme-btn', style: { color: '#fff', background: 'var(--accent)', borderColor: 'var(--accent)' }, onClick: submit }, 'Add')
+        ),
+        React.createElement('div', { className: 'meta-row' },
+          React.createElement('label', null, 'Due ', React.createElement('input', { type: 'date', value: dueDate, min: todayStr(), onChange: function (e) { return setDueDate(e.target.value); } })),
+          React.createElement('label', null, '@ ', React.createElement('input', { type: 'time', value: dueTime, onChange: function (e) { return setDueTime(e.target.value); } }))
+        )
+      );
+    }
+
+    function StatsBar(props) {
+      return React.createElement('div', { className: 'stats' },
+        React.createElement('span', null, 'Total ', React.createElement('strong', null, props.total)),
+        React.createElement('span', null, 'Pending ', React.createElement('strong', null, props.pending)),
+        React.createElement('span', null, 'In Progress ', React.createElement('strong', null, props.inProgress)),
+        React.createElement('span', null, 'Done ', React.createElement('strong', null, props.completed)),
+        React.createElement('span', { className: 'overdue-count' }, 'Overdue ', React.createElement('strong', null, props.overdue))
+      );
+    }
+
+    var TAB_ITEMS = [
+      { key: 'All', label: 'All', icon: '📋' },
+      { key: 'Pending', label: 'Pending', icon: '⏳' },
+      { key: 'In Progress', label: 'In Progress', icon: '🔄' },
+      { key: 'Completed', label: 'Completed', icon: '✅' },
+    ];
+
+    function Tabs({ active, onChange }) {
+      return React.createElement('div', { className: 'tabs' },
+        TAB_ITEMS.map(function (t) {
+          return React.createElement('button', {
+            key: t.key, className: 'tab' + (active === t.key ? ' active' : ''),
+            onClick: function () { return onChange(t.key); }
+          }, t.label);
+        })
+      );
+    }
+
+    function TaskItem(props) {
+      var task = props.task, selected = props.selected, onSelect = props.onSelect,
+          onToggle = props.onToggle, dotsOpen = props.dotsOpen,
+          onDotsOpen = props.onDotsOpen, onDotsClose = props.onDotsClose,
+          reminders = props.reminders, onOpenReminder = props.onOpenReminder;
+      var overdue = isTaskOverdue(task);
+      var statusClass = overdue ? 'overdue' : 'status-' + task.status;
+      var taskReminders = reminders.filter(function (r) { return r.taskId === task.id; });
+      return React.createElement('li', {
+        className: 'task-item ' + statusClass + (selected ? ' selected' : ''),
+        onClick: function () { return onSelect(task); }
+      },
+        React.createElement('input', {
+          type: 'checkbox', className: 't-check',
+          checked: task.status === 'completed',
+          onChange: function (e) { e.stopPropagation(); onToggle(task.id); }
+        }),
+        React.createElement('div', { className: 't-body' },
+          React.createElement('div', { className: 't-title' }, task.text),
+          React.createElement('div', { className: 't-meta' },
+            task.dueDate ? React.createElement('span', null,
+              overdue ? React.createElement('span', { className: 'overdue-tag' }, '\u26A0 Overdue ') : null,
+              formatDate(task.dueDate, task.dueTime)
+            ) : null
+          )
+        ),
+        taskReminders.length > 0 ? React.createElement('button', {
+          onClick: function (e) { e.stopPropagation(); onOpenReminder(task); },
+          style: { fontSize: 18, flexShrink: 0, alignSelf: 'center', marginRight: 4, lineHeight: 1, padding: 0, border: 'none', background: 'none', cursor: 'pointer', minHeight: 44, minWidth: 44 },
+          title: taskReminders.length + ' reminder(s) set'
+        }, '\u23F0') : null,
+        React.createElement('button', {
+          className: 't-dots',
+          onClick: function (e) { e.stopPropagation(); dotsOpen === task.id ? onDotsClose() : onDotsOpen(task.id); }
+        }, '\u22EE'),
+        dotsOpen === task.id ? React.createElement('div', { className: 'dropdown' },
+          React.createElement('button', { onClick: function (e) { e.stopPropagation(); onDotsClose(); onSelect(task); } }, 'View Details'),
+          React.createElement('button', { onClick: function (e) { e.stopPropagation(); onDotsClose(); }, className: 'danger' }, 'Delete')
+        ) : null
+      );
+    }
+
+    function ReminderModal(props) {
+      var task = props.task, reminders = props.reminders, onAdd = props.onAdd,
+          onUpdate = props.onUpdate, onDelete = props.onDelete, onClose = props.onClose,
+          onUpdateTask = props.onUpdateTask;
+      var _useState5 = useState(todayStr), rDate = _useState5[0], setRDate = _useState5[1];
+      var _useState6 = useState(nowTimeStr()), rTime = _useState6[0], setRTime = _useState6[1];
+      var _useState18 = useState(null), editingId = _useState18[0], setEditingId = _useState18[1];
+      var _useState19 = useState(''), editDate = _useState19[0], setEditDate = _useState19[1];
+      var _useState20 = useState(''), editTime = _useState20[0], setEditTime = _useState20[1];
+      var add = function () {
+        if (!rDate || !rTime) return;
+        onAdd(task.id, rDate, rTime);
+        setRDate(todayStr()); setRTime(nowTimeStr());
+      };
+      var startEdit = function (r) { setEditingId(r.id); setEditDate(r.date); setEditTime(r.time); };
+      var saveEdit = function () {
+        if (!editDate || !editTime || !editingId) return;
+        onUpdate(editingId, { date: editDate, time: editTime });
+        onUpdateTask(task.id, { dueDate: editDate, dueTime: editTime });
+        setEditingId(null);
+      };
+      var cancelEdit = function () { setEditingId(null); };
+      var taskReminders = reminders.filter(function (r) { return r.taskId === task.id; });
+      return React.createElement('div', { className: 'modal-overlay', onClick: onClose },
+        React.createElement('div', { className: 'modal', onClick: function (e) { return e.stopPropagation(); } },
+          React.createElement('h3', null, 'Reminders for "', task.text, '"'),
+          taskReminders.length > 0
+            ? React.createElement('ul', { className: 'reminder-list', style: { marginBottom: 16 } },
+                taskReminders.map(function (r) {
+                  var isEditing = editingId === r.id;
+                  return React.createElement('li', { key: r.id },
+                    isEditing
+                      ? React.createElement('div', { style: { display: 'flex', gap: 8, flex: 1, alignItems: 'center', flexWrap: 'wrap' } },
+                          React.createElement('input', { type: 'date', value: editDate, onChange: function (e) { return setEditDate(e.target.value); }, style: { flex: 1, minWidth: 120, padding: '6px 8px', border: '1.5px solid var(--border)', borderRadius: 5, fontSize: 12, background: 'var(--bg-card)', color: 'var(--text-primary)' } }),
+                          React.createElement('input', { type: 'time', value: editTime, onChange: function (e) { return setEditTime(e.target.value); }, style: { flex: 1, minWidth: 100, padding: '6px 8px', border: '1.5px solid var(--border)', borderRadius: 5, fontSize: 12, background: 'var(--bg-card)', color: 'var(--text-primary)' } }),
+                          React.createElement('button', { className: 'theme-btn', style: { padding: '4px 10px', fontSize: 11, minHeight: 36, color: 'var(--green)' }, onClick: saveEdit }, 'Save'),
+                          React.createElement('button', { className: 'theme-btn', style: { padding: '4px 10px', fontSize: 11, minHeight: 36 }, onClick: cancelEdit }, 'Cancel')
+                        )
+                      : React.createElement(React.Fragment, null,
+                          React.createElement('div', { className: 'r-info' }, formatDate(r.date, r.time)),
+                          React.createElement('div', { className: 'r-actions' },
+                            React.createElement('button', { className: 'theme-btn', style: { padding: '4px 10px', fontSize: 11, minHeight: 36 }, onClick: function () { startEdit(r); } }, 'Edit'),
+                            React.createElement('button', { className: 'theme-btn', style: { padding: '4px 10px', fontSize: 11, color: 'var(--red)', minHeight: 36 }, onClick: function () { onDelete(r.id); } }, 'Delete')
+                          )
+                        )
+                  );
+                })
+              )
+            : React.createElement('p', { style: { fontSize: 13, color: 'var(--text-muted)', marginBottom: 16 } }, 'No reminders set for this task.'),
+          React.createElement('label', null, 'New reminder \u2014 date'),
+          React.createElement('input', { type: 'date', value: rDate, min: todayStr(), onChange: function (e) { return setRDate(e.target.value); } }),
+          React.createElement('label', null, 'New reminder \u2014 time'),
+          React.createElement('input', { type: 'time', value: rTime, onChange: function (e) { return setRTime(e.target.value); } }),
+          React.createElement('div', { className: 'modal-actions' },
+            React.createElement('button', { style: { background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-secondary)' }, onClick: onClose }, 'Close'),
+            React.createElement('button', { style: { background: 'var(--purple)', border: 'none', color: '#fff' }, onClick: add }, 'Add Reminder')
+          )
+        )
+      );
+    }
+
+    function ConfirmDeleteModal({ task, onConfirm, onCancel }) {
+      return React.createElement('div', { className: 'modal-overlay', onClick: onCancel },
+        React.createElement('div', { className: 'modal', onClick: function (e) { return e.stopPropagation(); } },
+          React.createElement('h3', null, 'Delete Task'),
+          React.createElement('p', { style: { fontSize: 14, color: 'var(--text-secondary)', marginBottom: 18 } }, 'Delete ', React.createElement('strong', null, '"', task.text, '"'), ' permanently?'),
+          React.createElement('div', { className: 'modal-actions' },
+            React.createElement('button', { style: { background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-secondary)' }, onClick: onCancel }, 'Cancel'),
+            React.createElement('button', { style: { background: 'var(--red)', border: 'none', color: '#fff' }, onClick: function () { return onConfirm(task.id); } }, 'Delete')
+          )
+        )
+      );
+    }
+
+    function HistoryPanel({ history }) {
+      if (!history || history.length === 0) return React.createElement('p', { style: { fontSize: 13, color: 'var(--text-muted)' } }, 'No history yet.');
+      return React.createElement('ul', { className: 'history-list' },
+        history.slice().reverse().map(function (h, i) {
+          return React.createElement('li', { key: i },
+            React.createElement('span', { className: 'h-action' }, h.action),
+            React.createElement('span', { className: 'h-time' }, h.timestamp.replace('T', ' '))
+          );
+        })
+      );
+    }
+
+    function DetailView(props) {
+      var task = props.task, reminders = props.reminders, onUpdate = props.onUpdate,
+          onDuplicate = props.onDuplicate, onDelete = props.onDelete,
+          onOpenReminders = props.onOpenReminders, onDeleteReminder = props.onDeleteReminder,
+          onBack = props.onBack, addHistory = props.addHistory,
+          onUpdateReminder = props.onUpdateReminder;
+      var _useState7 = useState(false), editing = _useState7[0], setEditing = _useState7[1];
+      var _useState8 = useState(task.text), editText = _useState8[0], setEditText = _useState8[1];
+      var _useState9 = useState(null), detailEditingId = _useState9[0], setDetailEditingId = _useState9[1];
+      var _useState10 = useState(''), detailEditDate = _useState10[0], setDetailEditDate = _useState10[1];
+      var _useState11 = useState(''), detailEditTime = _useState11[0], setDetailEditTime = _useState11[1];
+      var startDetailEdit = function (r) { setDetailEditingId(r.id); setDetailEditDate(r.date); setDetailEditTime(r.time); };
+      var saveDetailEdit = function () {
+        if (!detailEditDate || !detailEditTime || !detailEditingId) return;
+        onUpdateReminder(detailEditingId, { date: detailEditDate, time: detailEditTime });
+        onUpdate(task.id, { dueDate: detailEditDate, dueTime: detailEditTime });
+        setDetailEditingId(null);
+      };
+      var cancelDetailEdit = function () { setDetailEditingId(null); };
+      var overdue = isTaskOverdue(task), onTime = isTaskOnTime(task);
+      var saveTitle = function () {
+        var t = editText.trim();
+        if (t && t !== task.text) { onUpdate(task.id, { text: t }); addHistory(task.id, 'What are you doing today?'); }
+        setEditing(false);
+      };
+      var handleStatusChange = function (status) {
+        if (status === task.status) return;
+        onUpdate(task.id, { status: status });
+        if (status === 'completed') addHistory(task.id, 'Task completed');
+        else if (status === 'in-progress') addHistory(task.id, 'Task moved to In Progress');
+        else addHistory(task.id, 'Task moved to Pending');
+      };
+      var handleDueDateChange = function (field, val) {
+        onUpdate(task.id, Object.assign({}, { [field]: val || null }));
+        addHistory(task.id, field === 'dueDate' ? 'Due date changed' : 'Due time changed');
+        reminders.filter(function (r) { return r.taskId === task.id; }).forEach(function (r) {
+          var upd = {};
+          if (field === 'dueDate') upd.date = val || r.date;
+          if (field === 'dueTime') upd.time = val || r.time;
+          if (Object.keys(upd).length > 0) onUpdateReminder(r.id, upd);
+        });
+      };
+      var taskReminders = reminders.filter(function (r) { return r.taskId === task.id; });
+      return React.createElement('div', { className: 'detail-view' },
+        taskReminders.length > 0 ? React.createElement('div', { style: { padding: '10px 16px', marginBottom: 16, borderRadius: 'var(--radius-sm)', background: 'color-mix(in srgb, var(--purple) 15%, transparent)', border: '1px solid var(--purple)', color: 'var(--purple)', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8, animation: 'popIn 0.3s ease' } }, '\uD83D\uDD14 ', taskReminders.length, ' reminder', taskReminders.length > 1 ? 's' : '', ' set') : null,
+        onTime ? React.createElement('div', { className: 'feedback-on-time', style: { marginBottom: 16 } }, '\u2713 Completed on time!') : null,
+        React.createElement('div', { className: 'detail-header' },
+          React.createElement('div', { className: 'detail-header-left' },
+            React.createElement('button', { className: 'theme-btn', onClick: onBack, style: { flexShrink: 0 } }, '\u2190 Back'),
+            editing
+              ? React.createElement('input', { type: 'text', style: { flex: 1, border: '1.5px solid var(--accent)', borderRadius: 6, padding: '4px 10px', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 22, fontWeight: 700 }, value: editText, onChange: function (e) { return setEditText(e.target.value); }, onKeyDown: function (e) { if (e.key === 'Enter') saveTitle(); }, onBlur: saveTitle, autoFocus: true })
+              : React.createElement('div', { className: 'detail-title', onClick: function () { setEditing(true); setEditText(task.text); } }, task.text)
+          )
+        ),
+        React.createElement('div', { className: 'detail-section' },
+          React.createElement('label', null, 'Status'),
+          React.createElement('div', { className: 'status-toggle-group' },
+            [{ key: 'pending', label: 'Pending' }, { key: 'in-progress', label: 'In Progress' }, { key: 'completed', label: 'Completed' }].map(function (s) {
+              var active = task.status === s.key;
+              return React.createElement('button', {
+                key: s.key,
+                style: {
+                  background: active ? (s.key === 'pending' ? 'var(--amber)' : s.key === 'in-progress' ? 'var(--accent)' : 'var(--green)') : 'transparent',
+                  color: active ? '#fff' : 'var(--text-secondary)',
+                  borderColor: active ? 'transparent' : 'var(--border)',
+                },
+                onClick: function () { return handleStatusChange(s.key); }
+              }, s.label);
+            })
+          )
+        ),
+        React.createElement('div', { className: 'detail-section' },
+          React.createElement('label', null, 'Due Date & Time'),
+          React.createElement('div', { className: 'date-inputs' },
+            React.createElement('label', null, 'Date', React.createElement('input', { type: 'date', value: task.dueDate || todayStr(), onChange: function (e) { return handleDueDateChange('dueDate', e.target.value); } })),
+            React.createElement('label', null, 'Time', React.createElement('input', { type: 'time', value: task.dueTime || '', onChange: function (e) { return handleDueDateChange('dueTime', e.target.value); } })),
+            overdue ? React.createElement('span', { style: { color: 'var(--red)', fontSize: 12, fontWeight: 600, alignSelf: 'center' } }, '\u26A0 Overdue') : null
+          )
+        ),
+        React.createElement('div', { className: 'detail-section' },
+          React.createElement('label', null, 'Reminders'),
+          taskReminders.length > 0
+            ? React.createElement('ul', { className: 'reminder-list', style: { marginBottom: 10 } },
+                taskReminders.map(function (r) {
+                  var isEditing = detailEditingId === r.id;
+                  return React.createElement('li', { key: r.id },
+                    isEditing
+                      ? React.createElement('div', { style: { display: 'flex', gap: 8, flex: 1, alignItems: 'center', flexWrap: 'wrap' } },
+                          React.createElement('input', { type: 'date', value: detailEditDate, onChange: function (e) { return setDetailEditDate(e.target.value); }, style: { flex: 1, minWidth: 120, padding: '6px 8px', border: '1.5px solid var(--border)', borderRadius: 5, fontSize: 12, background: 'var(--bg-card)', color: 'var(--text-primary)' } }),
+                          React.createElement('input', { type: 'time', value: detailEditTime, onChange: function (e) { return setDetailEditTime(e.target.value); }, style: { flex: 1, minWidth: 100, padding: '6px 8px', border: '1.5px solid var(--border)', borderRadius: 5, fontSize: 12, background: 'var(--bg-card)', color: 'var(--text-primary)' } }),
+                          React.createElement('button', { className: 'theme-btn', style: { padding: '4px 10px', fontSize: 11, minHeight: 36, color: 'var(--green)' }, onClick: saveDetailEdit }, 'Save'),
+                          React.createElement('button', { className: 'theme-btn', style: { padding: '4px 10px', fontSize: 11, minHeight: 36 }, onClick: cancelDetailEdit }, 'Cancel')
+                        )
+                      : React.createElement(React.Fragment, null,
+                          React.createElement('div', { className: 'r-info' }, formatDate(r.date, r.time)),
+                          React.createElement('div', { className: 'r-actions' },
+                            React.createElement('button', { className: 'theme-btn', style: { padding: '4px 10px', fontSize: 11, minHeight: 36 }, onClick: function () { startDetailEdit(r); } }, 'Edit'),
+                            React.createElement('button', { className: 'theme-btn', style: { padding: '4px 10px', fontSize: 11, color: 'var(--red)', minHeight: 36 }, onClick: function () { onDeleteReminder(r.id); } }, 'Delete')
+                          )
+                        )
+                  );
+                })
+              )
+            : React.createElement('p', { style: { fontSize: 13, color: 'var(--text-muted)', marginBottom: 10 } }, 'No reminders set.'),
+          React.createElement('button', { className: 'btn-action primary', onClick: function () { return onOpenReminders(task); } }, 'Manage Reminders')
+        ),
+        React.createElement('div', { className: 'detail-section' },
+          React.createElement('label', null, 'Actions'),
+          React.createElement('div', { style: { display: 'flex', gap: 8, flexWrap: 'wrap' } },
+            React.createElement('button', { className: 'btn-action', onClick: function () { onDuplicate(task); addHistory(task.id, 'Task duplicated'); } }, 'Duplicate'),
+            React.createElement('button', { className: 'btn-action danger', onClick: function () { return onDelete(task); } }, 'Delete')
+          )
+        ),
+        React.createElement('div', { className: 'detail-section' },
+          React.createElement('label', null, 'History'),
+          React.createElement(HistoryPanel, { history: task.history })
+        )
+      );
+    }
+
+    function SearchBar({ value, onChange }) {
+      var inputRef = useRef(null);
+      return React.createElement('div', { className: 'search-wrap' },
+        React.createElement('input', { ref: inputRef, type: 'text', placeholder: 'Search tasks...', value: value, onChange: function (e) { return onChange(e.target.value); } }),
+        React.createElement('button', { className: 'search-btn', onClick: function () { return inputRef.current ? inputRef.current.focus() : null; }, title: 'Search' }, '\u23CE')
+      );
+    }
+
+    // =============================================================
+    //  MAIN APP
+    // =============================================================
+
+    function TodoApp() {
+      var _useTasks = useTasks(), tasks = _useTasks.tasks, addTask = _useTasks.addTask,
+          updateTask = _useTasks.updateTask, deleteTask = _useTasks.deleteTask,
+          duplicateTask = _useTasks.duplicateTask, addHistory = _useTasks.addHistory;
+
+      var _useRemindersStore = useRemindersStore(), reminders = _useRemindersStore.reminders,
+          addReminder = _useRemindersStore.addReminder, updateReminder = _useRemindersStore.updateReminder,
+          deleteReminder = _useRemindersStore.deleteReminder;
+
+      useReminderTimers(reminders, tasks, addHistory);
+
+      var _useTheme = useTheme(), theme = _useTheme[0], toggleTheme = _useTheme[1];
+      var _useToast = useToast(), toast = _useToast[0], showToast = _useToast[1];
+
+      var _useState9 = useState('All'), activeTab = _useState9[0], setActiveTab = _useState9[1];
+      var _useState10 = useState(''), search = _useState10[0], setSearch = _useState10[1];
+      var _useState11 = useState(null), selectedTaskId = _useState11[0], setSelectedTaskId = _useState11[1];
+      var selectedTask = selectedTaskId ? tasks.find(function (t) { return t.id === selectedTaskId; }) : null;
+      var _useState12 = useState(null), dotsOpen = _useState12[0], setDotsOpen = _useState12[1];
+      var _useState13 = useState(null), reminderModalTask = _useState13[0], setReminderModalTask = _useState13[1];
+      var _useState14 = useState(null), deleteTarget = _useState14[0], setDeleteTarget = _useState14[1];
+      var _useState15 = useState(true), detailOpen = _useState15[0], setDetailOpen = _useState15[1];
+
+      // Mobile: list screen -> task screen -> detail modal
+      var _useState16 = useState('lists'), mobileScreen = _useState16[0], setMobileScreen = _useState16[1];
+      var _useState17 = useState(null), mobileTaskId = _useState17[0], setMobileTaskId = _useState17[1];
+      var mobileTask = mobileTaskId ? tasks.find(function (t) { return t.id === mobileTaskId; }) : null;
+
+      // Check mobile
+      var isMobile = useMemo(function () { return typeof window !== 'undefined' && window.innerWidth < 768; }, []);
+
+      // Stats
+      var stats = useMemo(function () {
+        var total = tasks.length;
+        var pending = tasks.filter(function (t) { return t.status === 'pending'; }).length;
+        var inProgress = tasks.filter(function (t) { return t.status === 'in-progress'; }).length;
+        var completed = tasks.filter(function (t) { return t.status === 'completed'; }).length;
+        var overdue = tasks.filter(function (t) { return isTaskOverdue(t); }).length;
+        return { total: total, pending: pending, inProgress: inProgress, completed: completed, overdue: overdue };
+      }, [tasks]);
+
+      // Count per tab
+      var tabCounts = useMemo(function () {
+        var obj = {};
+        TAB_ITEMS.forEach(function (t) {
+          if (t.key === 'All') obj[t.key] = tasks.length;
+          else if (t.key === 'Pending') obj[t.key] = tasks.filter(function (x) { return x.status === 'pending'; }).length;
+          else if (t.key === 'In Progress') obj[t.key] = tasks.filter(function (x) { return x.status === 'in-progress'; }).length;
+          else obj[t.key] = tasks.filter(function (x) { return x.status === 'completed'; }).length;
+        });
+        return obj;
+      }, [tasks]);
+
+      // Filter & sort
+      var filteredTasks = useMemo(function () {
+        var list = tasks.slice();
+        if (activeTab === 'Pending') list = list.filter(function (t) { return t.status === 'pending'; });
+        else if (activeTab === 'In Progress') list = list.filter(function (t) { return t.status === 'in-progress'; });
+        else if (activeTab === 'Completed') list = list.filter(function (t) { return t.status === 'completed'; });
+        if (search.trim()) { var q = search.trim().toLowerCase(); list = list.filter(function (t) { return t.text.toLowerCase().includes(q); }); }
+        list.sort(function (a, b) {
+          var order = { pending: 0, 'in-progress': 1, completed: 2 };
+          var ao = isTaskOverdue(a) ? -1 : order[a.status];
+          var bo = isTaskOverdue(b) ? -1 : order[b.status];
+          if (ao !== bo) return ao - bo;
+          return b.id - a.id;
+        });
+        return list;
+      }, [tasks, activeTab, search]);
+
+      var selectTask = function (task) { setSelectedTaskId(task.id); setDetailOpen(true); };
+
+      var handleAdd = function (text, dueDate, dueTime) {
+        var task = addTask(text, dueDate, dueTime);
+        showToast('Task added!', 'success');
+        selectTask(task);
+      };
+
+      var handleToggle = function (id) {
+        var task = tasks.find(function (t) { return t.id === id; });
+        if (!task) return;
+        if (task.status === 'completed') {
+          updateTask(id, { status: 'pending' }); addHistory(id, 'Task unmarked completed'); showToast('Task unmarked', 'info');
+        } else {
+          updateTask(id, { status: 'completed' }); addHistory(id, 'Task completed'); showToast('Task completed!', 'success');
+        }
+      };
+
+      var handleDelete = function (id) {
+        deleteTask(id);
+        reminders.filter(function (r) { return r.taskId === id; }).forEach(function (r) { deleteReminder(r.id); });
+        setDeleteTarget(null); setSelectedTaskId(null);
+        showToast('Task deleted', 'info');
+      };
+
+      var handleDuplicate = function (task) {
+        var dup = duplicateTask(task); showToast('Task duplicated', 'success'); selectTask(dup); return dup;
+      };
+
+      // Shared left panel content
+      var leftPanelContent = [
+        React.createElement('div', { className: 'header', key: 'h' },
+          React.createElement('h1', null, 'Quest Flow'),
+          React.createElement('div', { className: 'header-actions' },
+            React.createElement('button', { className: 'theme-btn', onClick: toggleTheme }, theme === 'light' ? '\uD83C\uDF19 Dark' : '\u2600\uFE0F Light')
+          )
+        ),
+        React.createElement(AddForm, { key: 'af', onAdd: handleAdd }),
+        React.createElement(StatsBar, Object.assign({ key: 'sb' }, stats)),
+        React.createElement(Tabs, { key: 'tb', active: activeTab, onChange: function (t) { setActiveTab(t); setDotsOpen(null); setMobileScreen('tasks'); } }),
+        React.createElement(SearchBar, { key: 'sr', value: search, onChange: setSearch }),
+        React.createElement('div', { key: 'tl', className: 'task-list-wrap' },
+          filteredTasks.length === 0
+            ? React.createElement('div', { className: 'empty-state' },
+                React.createElement('span', { className: 'icon' }, search ? '\uD83D\uDD0D' : activeTab === 'Completed' ? '\uD83C\uDF89' : '\uD83D\uDCCB'),
+                search ? 'No tasks match.' : activeTab === 'Completed' ? 'No completed tasks.' : activeTab === 'In Progress' ? 'No tasks in progress.' : activeTab === 'Pending' ? 'All caught up!' : 'Add a task to get started.'
+              )
+            : React.createElement('ul', { className: 'task-list' },
+                filteredTasks.map(function (task) {
+                  return React.createElement(TaskItem, {
+                    key: task.id, task: task,
+                    selected: selectedTask ? selectedTask.id === task.id : false,
+                    onSelect: function (t) { selectTask(t); setDotsOpen(null); setMobileTaskId(t.id); setMobileScreen('detail'); },
+                    onToggle: handleToggle, dotsOpen: dotsOpen, onDotsOpen: setDotsOpen,
+                    onDotsClose: function () { return setDotsOpen(null); },
+                    reminders: reminders, onOpenReminder: setReminderModalTask
+                  });
+                })
+              )
+        )
+      ];
+
+      var detailPanel = selectedTask
+        ? React.createElement(DetailView, {
+            key: selectedTask.id, task: selectedTask, reminders: reminders,
+            onUpdate: updateTask, onDuplicate: handleDuplicate, onDelete: setDeleteTarget,
+            onOpenReminders: setReminderModalTask, onDeleteReminder: deleteReminder,
+            onUpdateReminder: updateReminder,
+            onBack: function () { setSelectedTaskId(null); }, addHistory: addHistory
+          })
+        : React.createElement('div', { className: 'detail-placeholder' },
+            React.createElement('span', { className: 'icon' }, '\uD83D\uDCDD'),
+            React.createElement('h3', null, 'Select a task'),
+            React.createElement('p', null, 'Click a task from the left panel to view and edit its details here.')
+          );
+
+      return React.createElement('div', { className: 'app-container' },
+
+        // ===== DESKTOP =====
+        React.createElement('div', { className: 'desktop-only', style: { width: '100%', display: 'flex' } },
+          React.createElement('div', { className: 'panel-left' }, ...leftPanelContent),
+          React.createElement('div', { className: 'panel-right' }, detailPanel)
+        ),
+
+        // ===== MOBILE =====
+        React.createElement('div', { className: 'mobile-only', style: { width: '100%', flexDirection: 'column' } },
+
+          // Screen: lists
+          mobileScreen === 'lists'
+            ? React.createElement('div', { className: 'panel-left', style: { width: '100%', height: '100vh', borderRight: 'none' } },
+                React.createElement('div', { className: 'header' },
+                  React.createElement('h1', null, 'Quest Flow'),
+                  React.createElement('div', { className: 'header-actions' },
+                    React.createElement('button', { className: 'theme-btn', onClick: toggleTheme }, theme === 'light' ? '\uD83C\uDF19 Dark' : '\u2600\uFE0F Light')
+                  )
+                ),
+                React.createElement(AddForm, { onAdd: handleAdd }),
+                React.createElement(StatsBar, Object.assign({}, stats)),
+                React.createElement('div', { className: 'list-select' },
+                  TAB_ITEMS.map(function (t) {
+                    return React.createElement('div', {
+                      key: t.key, className: 'list-card',
+                      onClick: function () { setActiveTab(t.key); setMobileScreen('tasks'); }
+                    },
+                      React.createElement('div', null,
+                        React.createElement('div', { className: 'lc-title' }, t.icon, ' ', t.label),
+                        React.createElement('div', { className: 'lc-count' }, tabCounts[t.key] || 0, ' tasks')
+                      ),
+                      React.createElement('div', { className: 'lc-arrow' }, '\u203A')
+                    );
+                  })
+                )
+              )
+            : null,
+
+          // Screen: tasks
+          mobileScreen === 'tasks'
+            ? React.createElement('div', { className: 'panel-left', style: { width: '100%', height: '100vh', borderRight: 'none' } },
+                React.createElement('div', { className: 'header' },
+                  React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8 } },
+                    React.createElement('button', { className: 'theme-btn', onClick: function () { setDotsOpen(null); setMobileScreen('lists'); } }, '\u2190 Lists'),
+                    React.createElement('h1', null, activeTab)
+                  ),
+                  React.createElement('div', { className: 'header-actions' },
+                    React.createElement('button', { className: 'theme-btn', onClick: toggleTheme }, theme === 'light' ? '\uD83C\uDF19 Dark' : '\u2600\uFE0F Light')
+                  )
+                ),
+                React.createElement(SearchBar, { value: search, onChange: setSearch }),
+                React.createElement('div', { className: 'task-list-wrap' },
+                  filteredTasks.length === 0
+                    ? React.createElement('div', { className: 'empty-state' },
+                        React.createElement('span', { className: 'icon' }, search ? '\uD83D\uDD0D' : '\uD83D\uDCCB'),
+                        search ? 'No tasks match.' : 'No tasks in this list.'
+                      )
+                    : React.createElement('ul', { className: 'task-list' },
+                        filteredTasks.map(function (task) {
+                          return React.createElement(TaskItem, {
+                            key: task.id, task: task,
+                            selected: false,
+                            onSelect: function (t) { setMobileTaskId(t.id); setMobileScreen('detail'); },
+                            onToggle: handleToggle, dotsOpen: dotsOpen, onDotsOpen: setDotsOpen,
+                            onDotsClose: function () { return setDotsOpen(null); },
+                            reminders: reminders, onOpenReminder: setReminderModalTask
+                          });
+                        })
+                      )
+                )
+              )
+            : null,
+
+          // Screen: detail (modal overlay)
+          mobileScreen === 'detail' && mobileTask
+            ? React.createElement('div', { className: 'mobile-modal' },
+                React.createElement('div', { className: 'mobile-modal-header' },
+                  React.createElement('h2', null, 'Task Details'),
+                  React.createElement('button', { className: 'mobile-modal-close', onClick: function () { setMobileScreen('tasks'); } }, '\u2715')
+                ),
+                React.createElement(DetailView, {
+                  task: mobileTask, reminders: reminders,
+                  onUpdate: updateTask, onDuplicate: handleDuplicate, onDelete: function (t) { setDeleteTarget(t); },
+                  onOpenReminders: setReminderModalTask, onDeleteReminder: deleteReminder,
+                  onUpdateReminder: updateReminder,
+                  onBack: function () { setMobileScreen('tasks'); }, addHistory: addHistory
+                })
+              )
+            : null
+        ),
+
+        // Modals
+        reminderModalTask ? React.createElement(ReminderModal, {
+          task: reminderModalTask, reminders: reminders,
+          onAdd: addReminder, onUpdate: updateReminder, onDelete: deleteReminder,
+          onUpdateTask: updateTask,
+          onClose: function () { return setReminderModalTask(null); }
+        }) : null,
+
+        deleteTarget ? React.createElement(ConfirmDeleteModal, {
+          task: deleteTarget, onConfirm: handleDelete,
+          onCancel: function () { return setDeleteTarget(null); }
+        }) : null,
+
+        toast ? React.createElement('div', { className: 'toast ' + toast.type }, toast.msg) : null
+      );
+    }
+
+    var root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(React.createElement(TodoApp));
+  </script>
+</body>
+</html>
