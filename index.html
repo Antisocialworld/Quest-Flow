@@ -58,29 +58,26 @@
       --shadow: 0 4px 24px rgba(0,0,0,0.6);
     }
 
+    html {
+      overflow-x: clip;
+    }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background: var(--bg-page);
       color: var(--text-primary);
-      min-height: 100vh;
-      min-height: -webkit-fill-available;
+      min-height: 100dvh;
       transition: background 0.3s, color 0.3s;
       -webkit-font-smoothing: antialiased;
-      overflow-x: hidden;
+      overflow-x: clip;
       width: 100%;
       position: relative;
-    }
-    html {
-      height: -webkit-fill-available;
-      overflow-x: hidden;
     }
 
     /* ============= LAYOUT ============= */
     .app-container {
       display: flex;
-      min-height: 100vh;
-      min-height: -webkit-fill-available;
-      overflow-x: hidden;
+      min-height: 100dvh;
+      overflow-x: clip;
     }
 
     /* Left panel */
@@ -97,7 +94,7 @@
       padding-bottom: calc(24px + var(--safe-b));
       padding-left: calc(20px + var(--safe-l));
       padding-right: calc(20px + var(--safe-r));
-      overflow: hidden;
+      overflow: clip;
       transition: background 0.3s, border-color 0.3s;
     }
 
@@ -207,8 +204,8 @@
 
     /* ============= TASK LIST ============= */
     .task-list-wrap {
-      flex: 1; overflow-y: auto; overflow-x: hidden; min-height: 0;
-      margin: 0 -4px 0 0; padding-right: 4px;
+      flex: 1; overflow-y: auto; overflow-x: clip; min-height: 0;
+      touch-action: pan-y;
     }
     .task-list-wrap::-webkit-scrollbar { width: 5px; }
     .task-list-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
@@ -362,7 +359,7 @@
       position: fixed; inset: 0; background: rgba(0,0,0,0.45);
       display: flex; align-items: center; justify-content: center;
       z-index: 1000; animation: fadeIn 0.2s ease;
-      overflow-x: hidden;
+      overflow-x: clip;
       padding: 16px;
       padding-top: calc(16px + var(--safe-t));
       padding-bottom: calc(16px + var(--safe-b));
@@ -392,8 +389,9 @@
     /* ============= MOBILE FULL-SCREEN MODAL ============= */
     .mobile-modal {
       position: fixed; inset: 0; z-index: 1000;
-      background: var(--bg-page); overflow-y: auto; overflow-x: hidden;
+      background: var(--bg-page); overflow-y: auto; overflow-x: clip;
       animation: slideUp 0.3s ease;
+      touch-action: pan-y;
       padding: 20px;
       padding-top: calc(20px + var(--safe-t));
       padding-bottom: calc(20px + var(--safe-b));
@@ -436,6 +434,8 @@
       padding: 12px 24px; border-radius: var(--radius-sm);
       font-size: 14px; font-weight: 600; z-index: 2000;
       animation: popIn 0.3s ease; box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+      max-width: calc(100vw - 32px); white-space: nowrap; overflow: hidden;
+      text-overflow: ellipsis;
     }
     .toast.success { background: var(--green); color: #fff; }
     .toast.info { background: var(--accent); color: #fff; }
@@ -458,14 +458,14 @@
         max-width: none !important;
         min-width: 0 !important;
         border-right: none !important;
-        min-height: 100vh;
-        min-height: -webkit-fill-available;
+        min-height: 100dvh;
         overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
+        overflow-x: clip;
+        touch-action: pan-y;
       }
       .panel-right { display: none !important; }
 
-      body { overscroll-behavior: none; }
+      body { overscroll-behavior: none; touch-action: pan-y; }
 
       .add-form .row { flex-wrap: wrap; }
       .add-form .row button { flex-shrink: 0; }
@@ -1147,7 +1147,7 @@
         ),
 
         // ===== MOBILE =====
-        React.createElement('div', { className: 'mobile-only', style: { width: '100%', flexDirection: 'column', minHeight: '100vh', minHeight: '-webkit-fill-available' } },
+        React.createElement('div', { className: 'mobile-only', style: { width: '100%', flexDirection: 'column', minHeight: '100dvh' } },
 
           // Screen: lists
           mobileScreen === 'lists'
