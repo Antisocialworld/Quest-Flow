@@ -66,8 +66,14 @@
       min-height: -webkit-fill-available;
       transition: background 0.3s, color 0.3s;
       -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      width: 100%;
+      position: relative;
     }
-    html { height: -webkit-fill-available; }
+    html {
+      height: -webkit-fill-available;
+      overflow-x: hidden;
+    }
 
     /* ============= LAYOUT ============= */
     .app-container {
@@ -200,7 +206,7 @@
 
     /* ============= TASK LIST ============= */
     .task-list-wrap {
-      flex: 1; overflow-y: auto; min-height: 0;
+      flex: 1; overflow-y: auto; overflow-x: hidden; min-height: 0;
       margin: 0 -4px 0 0; padding-right: 4px;
     }
     .task-list-wrap::-webkit-scrollbar { width: 5px; }
@@ -355,6 +361,7 @@
       position: fixed; inset: 0; background: rgba(0,0,0,0.45);
       display: flex; align-items: center; justify-content: center;
       z-index: 1000; animation: fadeIn 0.2s ease;
+      overflow-x: hidden;
       padding: 16px;
       padding-top: calc(16px + var(--safe-t));
       padding-bottom: calc(16px + var(--safe-b));
@@ -384,13 +391,14 @@
     /* ============= MOBILE FULL-SCREEN MODAL ============= */
     .mobile-modal {
       position: fixed; inset: 0; z-index: 1000;
-      background: var(--bg-page); overflow-y: auto;
+      background: var(--bg-page); overflow-y: auto; overflow-x: hidden;
       animation: slideUp 0.3s ease;
       padding: 20px;
       padding-top: calc(20px + var(--safe-t));
       padding-bottom: calc(20px + var(--safe-b));
       padding-left: calc(20px + var(--safe-l));
       padding-right: calc(20px + var(--safe-r));
+      width: 100%;
     }
     @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
@@ -451,6 +459,13 @@
         border-right: none !important;
       }
       .panel-right { display: none !important; }
+
+      body { overscroll-behavior: none; }
+
+      @keyframes slideIn {
+        from { opacity: 0; transform: translateY(4px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
     }
 
     @media (min-width: 768px) {
@@ -710,7 +725,8 @@
       var task = props.task, selected = props.selected, onSelect = props.onSelect,
           onToggle = props.onToggle, dotsOpen = props.dotsOpen,
           onDotsOpen = props.onDotsOpen, onDotsClose = props.onDotsClose,
-          reminders = props.reminders, onOpenReminder = props.onOpenReminder;
+          reminders = props.reminders, onOpenReminder = props.onOpenReminder,
+          onDelete = props.onDelete;
       var overdue = isTaskOverdue(task);
       var statusClass = overdue ? 'overdue' : 'status-' + task.status;
       var taskReminders = reminders.filter(function (r) { return r.taskId === task.id; });
@@ -743,7 +759,7 @@
         }, '\u22EE'),
         dotsOpen === task.id ? React.createElement('div', { className: 'dropdown' },
           React.createElement('button', { onClick: function (e) { e.stopPropagation(); onDotsClose(); onSelect(task); } }, 'View Details'),
-          React.createElement('button', { onClick: function (e) { e.stopPropagation(); onDotsClose(); }, className: 'danger' }, 'Delete')
+          React.createElement('button', { onClick: function (e) { e.stopPropagation(); onDotsClose(); onDelete(task); }, className: 'danger' }, 'Delete')
         ) : null
       );
     }
@@ -1058,6 +1074,7 @@
         deleteTask(id);
         reminders.filter(function (r) { return r.taskId === id; }).forEach(function (r) { deleteReminder(r.id); });
         setDeleteTarget(null); setSelectedTaskId(null);
+        setMobileTaskId(null); setMobileScreen('tasks');
         showToast('Task deleted', 'info');
       };
 
@@ -1091,7 +1108,8 @@
                     onSelect: function (t) { selectTask(t); setDotsOpen(null); setMobileTaskId(t.id); setMobileScreen('detail'); },
                     onToggle: handleToggle, dotsOpen: dotsOpen, onDotsOpen: setDotsOpen,
                     onDotsClose: function () { return setDotsOpen(null); },
-                    reminders: reminders, onOpenReminder: setReminderModalTask
+                    reminders: reminders, onOpenReminder: setReminderModalTask,
+                    onDelete: setDeleteTarget
                   });
                 })
               )
@@ -1178,7 +1196,8 @@
                             onSelect: function (t) { setMobileTaskId(t.id); setMobileScreen('detail'); },
                             onToggle: handleToggle, dotsOpen: dotsOpen, onDotsOpen: setDotsOpen,
                             onDotsClose: function () { return setDotsOpen(null); },
-                            reminders: reminders, onOpenReminder: setReminderModalTask
+                            reminders: reminders, onOpenReminder: setReminderModalTask,
+                            onDelete: setDeleteTarget
                           });
                         })
                       )
